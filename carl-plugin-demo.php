@@ -11,8 +11,33 @@ Version: 1.0.1
 Author URI: https:/carlalberto.code.blog/
 */
 
+
+
 /**
- * Undocumented function
+ * @since 0.1.0
+ */
+function admin_notice_example_activation_hook() {
+    set_transient( 'admin-notice-example', true, 5 );
+}
+register_activation_hook( __FILE__, 'admin_notice_example_activation_hook' );
+
+/**
+ * Add Admin message here in the admin notification notices.
+ */
+function admin_notice_example_notice(){
+    if( get_transient( 'admin-notice-example' ) ){
+        ?>
+        <div class="updated notice is-dismissible">
+            <p>Plugin is activate! <strong>Nice!</strong></p>
+        </div>
+        <?php
+        delete_transient( 'admin-notice-example' );
+    }
+}
+add_action( 'admin_notices', 'admin_notice_example_notice' );
+
+/**
+ * This will create a table called test2.
  *
  * @return void
  */
@@ -28,17 +53,12 @@ function your_plugin_install() {
 	);';
 
 	$wpdb->query( $sql );
-	$html  = '<div class="updated">';
-	$html .= '<p>';
-	$html .= __( 'Test plugin activated', 'text-domain' );
-	$html .= '</p>';
-	$html .= '</div>';
-	echo $html;
+
 }
 register_activation_hook( __FILE__, 'your_plugin_install' );
 
 /**
- * Deactivation Hook
+ * Deactivation Hook. This will delete the table test2.
  *
  * @return void
  */
@@ -51,156 +71,18 @@ function pluginprefix_deactivation() {
 }
 register_deactivation_hook( __FILE__, 'pluginprefix_deactivation' );
 
+////////////////////////////////////////////////// Sample filter
 
 /**
- * Register Settings
- *
- * @return void
+ * This will allow you to filter or modify the title.
  */
-function cpd_settings_init() {
-	register_setting( 'wporg', 'wporg_options' );
-	add_settings_section(
-		'wporg_section_developers',
-		__( 'Carl Plugin Demo.', 'wporg' ),
-		'wporg_section_developers_cb',
-		'wporg'
-	);
-
-	add_settings_field(
-		'wporg_field_pill',
-		__( 'Question Dropdown', 'wporg' ),
-		'wporg_field_pill_cb',
-		'wporg',
-		'wporg_section_developers',
-		[
-			'label_for'         => 'wporg_field_pill',
-			'class'             => 'wporg_row',
-			'wporg_custom_data' => 'custom',
-		]
-	);
-
-	add_settings_field(
-		'wporg_field_pill2',
-		__( 'Inputbox', 'wporg' ),
-		'wporg_field_pill_cb2',
-		'wporg',
-		'wporg_section_developers',
-		[
-			'label_for'         => 'wporg_field_pill2',
-			'class'             => 'wporg_row',
-			'wporg_custom_data' => 'custom',
-		]
-	);
+function wpshout_filter_example($title) {
+	return 'Filtered: '.$title;
 }
-add_action( 'admin_init', 'cpd_settings_init' );
-
-/**
- * Description settings
- *
- * @param [type] $args
- * @return void
- */
-function wporg_section_developers_cb( $args ) {
-	?>
-	<p id="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Follow us with some description here.', 'wporg' ); ?></p>
-	<?php
-}
+// add_filter('the_title', 'wpshout_filter_example');
 
 
-function wporg_field_pill_cb( $args ) {
-	$options = get_option( 'wporg_options' );
-	// output the field
-	?>
-	<select id="<?php echo esc_attr( $args['label_for'] ); ?>"
-	data-custom="<?php echo esc_attr( $args['wporg_custom_data'] ); ?>"
-	name="wporg_options[<?php echo esc_attr( $args['label_for'] ); ?>]"
-	>
-	<option value="yes" <?php echo isset( $options[ $args['label_for'] ] ) ? ( selected( $options[ $args['label_for'] ], 'yes', false ) ) : ( '' ); ?>>
-	<?php esc_html_e( 'Yes', 'wporg' ); ?>
-	</option>
-	<option value="no" <?php echo isset( $options[ $args['label_for'] ] ) ? ( selected( $options[ $args['label_for'] ], 'no', false ) ) : ( '' ); ?>>
-	<?php esc_html_e( 'No', 'wporg' ); ?>
-	</option>
-	</select>
-
-	<p class="description">
-	<?php esc_html_e( 'Dropdown text', 'wporg' ); ?>
-	</p>
-	<?php
-}
-
-/**
- * Register field types
- *
- * @param [type] $args
- * @return void
- */
-function wporg_field_pill_cb2( $args ) {
-	$options = get_option( 'wporg_options' );
-	?>
-	<input id="<?php echo esc_attr( $args['label_for'] ); ?>"
-	data-custom="<?php echo esc_attr( $args['wporg_custom_data'] ); ?>"
-	name="wporg_options[<?php echo esc_attr( $args['label_for'] ); ?>]"
-	value="<?php echo isset( $options[ $args['label_for'] ] ) ? $options[ $args['label_for'] ] : ( '' ); ?>"
-	>
-
-	<p class="description">
-	<?php echo esc_attr( $options[ $args['label_for'] ] ); ?>
-	</p>
-	<p class="description">
-	<?php esc_html_e( 'Textbox description.', 'wporg' ); ?>
-	</p>
-	<?php
-}
-/**
- * Add menu item to the admin menu.
- *
- * @return void
- */
-function wporg_options_page() {
-	add_menu_page(
-		'WP Plugin Settings Page',
-		'WP test Settings',
-		'manage_options',
-		'wporg',
-		'wporg_options_page_html'
-	);
-}
-
-/**
-* Register our wporg_options_page to the admin_menu action hook
-*/
-add_action( 'admin_menu', 'wporg_options_page' );
-
-/**
- * Options page
- *
- * @return void
- */
-function wporg_options_page_html() {
-	if ( ! current_user_can( 'manage_options' ) ) {
-		return;
-	}
-
-	if ( isset( $_GET['settings-updated'] ) ) {
-		add_settings_error( 'wporg_messages', 'wporg_message', __( 'Settings Saved', 'wporg' ), 'updated' );
-	}
-
-	settings_errors( 'wporg_messages' );
-	?>
-	<div class="wrap">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-	<form action="options.php" method="post">
-	<?php
-	settings_fields( 'wporg' );
-	do_settings_sections( 'wporg' );
-	submit_button( 'Save Settings' );
-	?>
-	</form>
-	</div>
-	<?php
-}
-
+//////////////////////////////////////////////// Custom Post types
 
 /**
  * Register Custom Post Type for Cars
@@ -264,6 +146,7 @@ add_action( 'init', 'ctp_sample_plugin', 0 );
 
 /**
  * Taxonomy for Car post types
+ *
  * @return void
  */
 function tax_car_manufacturer() {
@@ -302,7 +185,7 @@ function tax_car_manufacturer() {
 	register_taxonomy( 'car_manufacturer', array( 'cars' ), $args );
 
 }
-add_action( 'init', 'tax_car_manufacturer', 0 );
+// add_action( 'init', 'tax_car_manufacturer', 0 );
 
 /**
  * Return custom taxonomy for cars
@@ -346,3 +229,223 @@ function tax_car_classification() {
 
 }
 add_action( 'init', 'tax_car_classification', 0 );
+
+/////////////////////////////////// Settings API
+
+/**
+ * Register Settings page functions. 
+ *
+ * @return void
+ */
+function cpd_settings_init() {
+	// This initiates the settings API 
+	register_setting( 'wporg', 'wporg_options' );
+	// Adds a section in WP Settings page
+	add_settings_section(
+		'wporg_section_developers',
+		__( 'Carl Plugin Demo.', 'wporg' ),
+		'wporg_section_developers_cb',
+		'wporg'
+	);
+	// This add the dropdown
+	add_settings_field(
+		'wporg_field_pill',
+		__( 'Question Dropdown', 'wporg' ),
+		'wporg_field_pill_cb',
+		'wporg',
+		'wporg_section_developers',
+		[
+			'label_for'         => 'wporg_field_pill',
+			'class'             => 'wporg_row',
+			'wporg_custom_data' => 'custom',
+		]
+	);
+	// This add the inputbox
+	add_settings_field(
+		'wporg_field_pill2',
+		__( 'Inputbox', 'wporg' ),
+		'wporg_field_pill_cb2', // Must match the CAllback function below
+		'wporg',
+		'wporg_section_developers',
+		[
+			'label_for'         => 'wporg_field_pill2',
+			'class'             => 'wporg_row',
+			'wporg_custom_data' => 'custom',
+		]
+	);
+}
+add_action( 'admin_init', 'cpd_settings_init' );
+
+/**
+ * Add Description settings in the settings page
+ *
+ * @param [type] $args
+ * @return void
+ */
+function wporg_section_developers_cb( $args ) {
+	?>
+	<p id="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Follow us with some description here.', 'wporg' ); ?></p>
+	<?php
+}
+
+/**
+ * This is the callback in the html part of the settings page.
+ */
+function wporg_field_pill_cb( $args ) {
+	$options = get_option( 'wporg_options' );
+	// output the field
+	?>
+	<select id="<?php echo esc_attr( $args['label_for'] ); ?>"
+	data-custom="<?php echo esc_attr( $args['wporg_custom_data'] ); ?>"
+	name="wporg_options[<?php echo esc_attr( $args['label_for'] ); ?>]"
+	>
+	<option value="yes" <?php echo isset( $options[ $args['label_for'] ] ) ? ( selected( $options[ $args['label_for'] ], 'yes', false ) ) : ( '' ); ?>>
+	<?php esc_html_e( 'Yes', 'wporg' ); ?>
+	</option>
+	<option value="no" <?php echo isset( $options[ $args['label_for'] ] ) ? ( selected( $options[ $args['label_for'] ], 'no', false ) ) : ( '' ); ?>>
+	<?php esc_html_e( 'No', 'wporg' ); ?>
+	</option>
+	</select>
+
+	<p class="description">
+	<?php esc_html_e( 'Dropdown text', 'wporg' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Register field types. You can add here your dropdowns, inputboxes, selectbox, etc..
+ *
+ * @param [type] $args
+ * @return void
+ */
+function wporg_field_pill_cb2( $args ) {
+	$options = get_option( 'wporg_options' );
+	?>
+	<input id="<?php echo esc_attr( $args['label_for'] ); ?>"
+	data-custom="<?php echo esc_attr( $args['wporg_custom_data'] ); ?>"
+	name="wporg_options[<?php echo esc_attr( $args['label_for'] ); ?>]"
+	value="<?php echo isset( $options[ $args['label_for'] ] ) ? $options[ $args['label_for'] ] : ( '' ); ?>"
+	>
+
+	<p class="description">
+	<?php echo esc_attr( $options[ $args['label_for'] ] ); ?>
+	</p>
+	<p class="description">
+	<?php esc_html_e( 'Textbox description.', 'wporg' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Main wrapper for the html Options page
+ *
+ * @return void
+ */
+function wporg_options_page_html() {
+	// Add user checks here to make sure a user's role and capability is allowed to edit options
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	if ( isset( $_GET['settings-updated'] ) ) {
+		add_settings_error( 'wporg_messages', 'wporg_message', __( 'Settings Saved', 'wporg' ), 'updated' );
+	}
+
+	settings_errors( 'wporg_messages' );
+	?>
+	<div class="wrap">
+	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+	<form action="options.php" method="post">
+	<?php
+	settings_fields( 'wporg' );
+	do_settings_sections( 'wporg' );
+	submit_button( 'Save Settings' );
+	?>
+	</form>
+	</div>
+	<?php
+}
+
+/**
+ * Add menu item to the admin menu.
+ *
+ * @return void
+ */
+function wporg_options_page() {
+	add_menu_page(
+		'WP Plugin Settings Page',
+		'WP test Settings',
+		'manage_options',
+		'wporg',
+		'wporg_options_page_html'
+	);
+}
+add_action( 'admin_menu', 'wporg_options_page' );
+
+////////////////////////////////////////////////// Sample WP Query
+
+/**
+ * WP Query sample that queries our CPT cars
+ *
+ * @return void
+ */
+function showthis_template() {
+	$args = array (
+		'post_type'              => array( 'cars' ),
+		'post_status'            => array( 'publish' ),
+		'nopaging'               => true,
+		'order'                  => 'ASC',
+		'orderby'                => 'title',
+		'tax_query' => array(
+			'relation' => 'OR',
+			array(
+				'taxonomy' => 'car_manufacturer',
+				'field'    => 'slug',
+				'terms'    => 'honda',
+			),
+			array(
+				'taxonomy' => 'car_class',
+				'field'    => 'slug',
+				'terms'    => 'sports',
+			),
+		),
+	);
+	$services = new WP_Query( $args );
+	$q = '';
+
+	if ( $services->have_posts() ) {
+		while ( $services->have_posts() ) {
+			$services->the_post();
+			$q .= '<li>' . get_the_title() . '</li>';
+		}
+	} else {
+		$q = 'Empty Data';
+	}
+
+	wp_reset_postdata();
+	// return $q;
+	echo $q;
+}
+
+add_shortcode( 'list_cars', 'showthis_template' );
+// add_action( 'showthis', 'showthis_template' );
+
+/**
+ * Modify headers
+ *
+ * @param [type] $headers
+ * @return void
+ */
+function add_header_xua( $headers ) {
+
+	if ( ! is_admin() ) {
+		$headers['X-UA-Compatible'] = 'IE=edge,chrome=1';
+	}
+	return $headers;
+}
+add_filter( 'wp_headers', 'add_header_xua' ); 
+
+// Enqueue styles
+
+
