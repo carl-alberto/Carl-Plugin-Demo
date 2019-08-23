@@ -9,56 +9,39 @@ Description: This is a description. Demo for WordCamp.
 Author: Carl Alberto
 Version: 1.0.1
 Author URI: https:/carlalberto.code.blog/
+URI: http://dev-wp-plugin-demo-1.pantheonsite.io/
 */
 
-
+////////////////////////////////////////////////////// ACTIVATION / DEACTIVATION HOOK
 
 /**
- * @since 0.1.0
+ * Activation hook Demo with notification message
+ *
+ * @return void
  */
 function admin_notice_example_activation_hook() {
-    set_transient( 'admin-notice-example', true, 5 );
+	set_transient( 'admin-notice-example', true, 5 );
 }
-register_activation_hook( __FILE__, 'admin_notice_example_activation_hook' );
+// register_activation_hook( __FILE__, 'admin_notice_example_activation_hook' );
 
 /**
  * Add Admin message here in the admin notification notices.
  */
-function admin_notice_example_notice(){
-    if( get_transient( 'admin-notice-example' ) ){
-        ?>
-        <div class="updated notice is-dismissible">
-            <p>Plugin is activate! <strong>Nice!</strong></p>
-        </div>
-        <?php
-        delete_transient( 'admin-notice-example' );
-    }
+function admin_notice_example_notice() {
+	if ( get_transient( 'admin-notice-example' ) ) {
+		?>
+		<div class="updated notice is-dismissible">
+			<p>Plugin is activate! <strong>Nice!</strong></p>
+		</div>
+		<?php
+		delete_transient( 'admin-notice-example' );
+	}
 }
-add_action( 'admin_notices', 'admin_notice_example_notice' );
+// add_action( 'admin_notices', 'admin_notice_example_notice' );
 
 /**
- * This will create a table called test2.
- *
- * @return void
- */
-function your_plugin_install() {
-	global $wpdb;
-	$your_db_name = $wpdb->prefix . 'test2';
-
-	$sql = 'CREATE TABLE ' . $your_db_name . ' (
-	`id` mediumint(9) NOT NULL AUTO_INCREMENT,
-	`field_1` mediumtext NOT NULL,
-	`field_2` varchar(255),
-	UNIQUE KEY id (id)
-	);';
-
-	$wpdb->query( $sql );
-
-}
-register_activation_hook( __FILE__, 'your_plugin_install' );
-
-/**
- * Deactivation Hook. This will delete the table test2.
+ * Deactivation Hook
+ * This also demonstrates wpdb query example
  *
  * @return void
  */
@@ -69,27 +52,49 @@ function pluginprefix_deactivation() {
 	$wpdb->query( $sql );
 
 }
-register_deactivation_hook( __FILE__, 'pluginprefix_deactivation' );
+// register_deactivation_hook( __FILE__, 'pluginprefix_deactivation' );
 
-////////////////////////////////////////////////// Sample filter
 
+/////////////////////////////////////////////////////// Filter sample 1
 /**
- * This will allow you to filter or modify the title.
+ * Modify headers and add authentication via wp_headers filter
+ *
+ * @param [type] $headers
+ * @return void
  */
-function wpshout_filter_example($title) {
-	return 'Filtered: '.$title;
+function add_header_auth( $headers ) {
+
+	if ( ! is_admin() ) {
+		$headers['Authorization'] = 'Basic YWxhZGRpbjpvcGVuc2VzYW1l';
+	}
+	return $headers;
 }
-// add_filter('the_title', 'wpshout_filter_example');
+// add_filter( 'wp_headers', 'add_header_auth' );
+
+/////////////////////////////////////////////////////// Filter sample 2
+/**
+ * Modifies the header title of your posts
+ *
+ * @param [type] $title
+ * @param [type] $id
+ * @return void
+ */
+function make_custom_title( $title, $id ) {
+	$titlemod = 'Modded:::';
+	return $titlemod . $title;
+}
+// add_filter( 'the_title', 'make_custom_title', 10, 2 );
 
 
-//////////////////////////////////////////////// Custom Post types
+
+////////////////////////////////////////////////////// CUSTOM POST TYPE
 
 /**
  * Register Custom Post Type for Cars
  *
  * @return void
  */
-function ctp_sample_plugin() {
+function ctp_sample_CPT() {
 
 	$labels = array(
 		'name'                  => _x( 'Cars', 'Post Type General Name', 'carl-test-plugin' ),
@@ -121,31 +126,33 @@ function ctp_sample_plugin() {
 		'filter_items_list'     => __( 'Filter Car list', 'carl-test-plugin' ),
 	);
 	$args   = array(
-		'label'               => __( 'Car', 'carl-test-plugin' ),
-		'description'         => __( 'Car Description', 'carl-test-plugin' ),
-		'labels'              => $labels,
-		'supports'            => array( 'title', 'editor', 'custom-fields' ),
+		'label'                    => __( 'Car', 'carl-test-plugin' ),
+		'description'              => __( 'Car Description', 'carl-test-plugin' ),
+		'labels'                   => $labels,
+		'supports'                 => array( 'title', 'editor', 'custom-fields' ),
+		// essential when linking to toxonomy
 		'taxonomies'          => array( 'manufacturer', 'classification' ),
-		'hierarchical'        => true,
-		'public'              => true,
-		'show_ui'             => true,
-		'show_in_menu'        => true,
-		'menu_position'       => 5,
-		'show_in_admin_bar'   => true,
-		'show_in_nav_menus'   => true,
-		'can_export'          => true,
-		'has_archive'         => true,
-		'exclude_from_search' => false,
-		'publicly_queryable'  => true,
-		'capability_type'     => 'page',
+					'hierarchical' => true,
+		'public'                   => true,
+		'show_ui'                  => true,
+		'show_in_menu'             => true,
+		'menu_position'            => 5,
+		'show_in_admin_bar'        => true,
+		'show_in_nav_menus'        => true,
+		'can_export'               => true,
+		'has_archive'              => true,
+		'exclude_from_search'      => false,
+		'publicly_queryable'       => true,
+		'capability_type'          => 'page',
 	);
 	register_post_type( 'cars', $args );
 
 }
-add_action( 'init', 'ctp_sample_plugin', 0 );
+// add_action( 'init', 'ctp_sample_CPT', 0 );
 
+////////////////////////////////////////////////////// CUSTOM TAXONMY 1 
 /**
- * Taxonomy for Car post types
+ * Register taxonomy for car manufacturer
  *
  * @return void
  */
@@ -182,13 +189,15 @@ function tax_car_manufacturer() {
 		'show_in_nav_menus' => true,
 		'show_tagcloud'     => true,
 	);
+	// taxonomy name, post type and args
 	register_taxonomy( 'car_manufacturer', array( 'cars' ), $args );
 
 }
 // add_action( 'init', 'tax_car_manufacturer', 0 );
 
+////////////////////////////////////////////////////// CUSTOM TAXONMY 2
 /**
- * Return custom taxonomy for cars
+ * Return custom taxonomy for cars another set of category
  *
  * @return void
  */
@@ -225,59 +234,104 @@ function tax_car_classification() {
 		'show_in_nav_menus' => true,
 		'show_tagcloud'     => true,
 	);
+	// taxonomy name, post type and args
 	register_taxonomy( 'car_class', array( 'cars' ), $args );
 
 }
-add_action( 'init', 'tax_car_classification', 0 );
-
-/////////////////////////////////// Settings API
+// add_action( 'init', 'tax_car_classification', 0 );
 
 /**
- * Register Settings page functions. 
+ * WP Query sample to QUERY POST TYPES with taxonomy query examples
+ * add shortcode in a blog or post/page.
  *
  * @return void
  */
-function cpd_settings_init() {
-	// This initiates the settings API 
-	register_setting( 'wporg', 'wporg_options' );
-	// Adds a section in WP Settings page
-	add_settings_section(
-		'wporg_section_developers',
-		__( 'Carl Plugin Demo.', 'wporg' ),
-		'wporg_section_developers_cb',
-		'wporg'
+function showthis_shortcode() {
+	$args     = array(
+		'post_type'   => array( 'cars' ),
+		'post_status' => array( 'publish' ),
+		'nopaging'    => true,
+		'order'       => 'ASC',
+		'orderby'     => 'title',
+		'tax_query'   => array(
+			'relation' => 'OR',
+			array(
+				'taxonomy' => 'car_manufacturer',
+				'field'    => 'slug',
+				'terms'    => 'honda',
+			),
+			array(
+				'taxonomy' => 'car_class',
+				'field'    => 'slug',
+				'terms'    => 'sports',
+			),
+		),
 	);
-	// This add the dropdown
-	add_settings_field(
-		'wporg_field_pill',
-		__( 'Question Dropdown', 'wporg' ),
-		'wporg_field_pill_cb',
-		'wporg',
-		'wporg_section_developers',
-		[
-			'label_for'         => 'wporg_field_pill',
-			'class'             => 'wporg_row',
-			'wporg_custom_data' => 'custom',
-		]
-	);
-	// This add the inputbox
-	add_settings_field(
-		'wporg_field_pill2',
-		__( 'Inputbox', 'wporg' ),
-		'wporg_field_pill_cb2', // Must match the CAllback function below
-		'wporg',
-		'wporg_section_developers',
-		[
-			'label_for'         => 'wporg_field_pill2',
-			'class'             => 'wporg_row',
-			'wporg_custom_data' => 'custom',
-		]
-	);
+	$services = new WP_Query( $args );
+	$q        = '';
+
+	if ( $services->have_posts() ) {
+		while ( $services->have_posts() ) {
+			$services->the_post();
+			$q .= '<li>' . get_the_title() . '</li>';
+		}
+	} else {
+		$q = 'Empty Data';
+	}
+
+	wp_reset_postdata();
+	return $q;
+	// echo $q;
 }
-add_action( 'admin_init', 'cpd_settings_init' );
+// add_shortcode( 'list_cars', 'showthis_shortcode' );
 
 /**
- * Add Description settings in the settings page
+ * Add this to make this appear in the template
+ *
+ * @return void
+ */
+function showthis_template() {
+	$args     = array(
+		'post_type'   => array( 'cars' ),
+		'post_status' => array( 'publish' ),
+		'nopaging'    => true,
+		'order'       => 'ASC',
+		'orderby'     => 'title',
+		'tax_query'   => array(
+			'relation' => 'OR',
+			array(
+				'taxonomy' => 'car_manufacturer',
+				'field'    => 'slug',
+				'terms'    => 'honda',
+			),
+			array(
+				'taxonomy' => 'car_class',
+				'field'    => 'slug',
+				'terms'    => 'sports',
+			),
+		),
+	);
+	$services = new WP_Query( $args );
+	$q        = '';
+
+	if ( $services->have_posts() ) {
+		while ( $services->have_posts() ) {
+			$services->the_post();
+			$q .= '<li>' . get_the_title() . '</li>';
+		}
+	} else {
+		$q = 'Empty Data';
+	}
+
+	wp_reset_postdata();
+	// return $q;
+	echo $q;
+}
+// add_action( 'showthis', 'showthis_template' );
+
+////////////////////////////////////////////////////// SETTINGS API
+/**
+ * Description settings for Settings API
  *
  * @param [type] $args
  * @return void
@@ -289,7 +343,10 @@ function wporg_section_developers_cb( $args ) {
 }
 
 /**
- * This is the callback in the html part of the settings page.
+ * Settings Callback for the dropbbox html
+ *
+ * @param [type] $args
+ * @return void
  */
 function wporg_field_pill_cb( $args ) {
 	$options = get_option( 'wporg_options' );
@@ -314,7 +371,7 @@ function wporg_field_pill_cb( $args ) {
 }
 
 /**
- * Register field types. You can add here your dropdowns, inputboxes, selectbox, etc..
+ * Settings Callback for the inputbox html
  *
  * @param [type] $args
  * @return void
@@ -338,12 +395,11 @@ function wporg_field_pill_cb2( $args ) {
 }
 
 /**
- * Main wrapper for the html Options page
+ * Create the Options page html wrapper
  *
  * @return void
  */
 function wporg_options_page_html() {
-	// Add user checks here to make sure a user's role and capability is allowed to edit options
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
@@ -368,7 +424,51 @@ function wporg_options_page_html() {
 }
 
 /**
- * Add menu item to the admin menu.
+ * Registering the Settings API page using the callback setuped above
+ *
+ * @return void
+ */
+function cpd_settings_init() {
+	register_setting( 'wporg', 'wporg_options' );
+	add_settings_section(
+		'wporg_section_developers',
+		__( 'Carl Plugin Demo.', 'wporg' ),
+		'wporg_section_developers_cb',
+		'wporg'
+	);
+
+	// Registers the dropdown callback
+	add_settings_field(
+		'wporg_field_pill',
+		__( 'Question Dropdown', 'wporg' ),
+		'wporg_field_pill_cb',
+		'wporg',
+		'wporg_section_developers',
+		[
+			'label_for'         => 'wporg_field_pill',
+			'class'             => 'wporg_row',
+			'wporg_custom_data' => 'custom',
+		]
+	);
+
+	// Registers the inputbox callback
+	add_settings_field(
+		'wporg_field_pill2',
+		__( 'Inputbox', 'wporg' ),
+		'wporg_field_pill_cb2',
+		'wporg',
+		'wporg_section_developers',
+		[
+			'label_for'         => 'wporg_field_pill2',
+			'class'             => 'wporg_row',
+			'wporg_custom_data' => 'custom',
+		]
+	);
+}
+// add_action( 'admin_init', 'cpd_settings_init' );
+
+/**
+ * Add settings link in the menu item to the admin menu.
  *
  * @return void
  */
@@ -378,74 +478,10 @@ function wporg_options_page() {
 		'WP test Settings',
 		'manage_options',
 		'wporg',
-		'wporg_options_page_html'
+		'wporg_options_page_html' // calls the html function wrapper
 	);
 }
-add_action( 'admin_menu', 'wporg_options_page' );
+// add_action( 'admin_menu', 'wporg_options_page' );
 
-////////////////////////////////////////////////// Sample WP Query
-
-/**
- * WP Query sample that queries our CPT cars
- *
- * @return void
- */
-function showthis_template() {
-	$args = array (
-		'post_type'              => array( 'cars' ),
-		'post_status'            => array( 'publish' ),
-		'nopaging'               => true,
-		'order'                  => 'ASC',
-		'orderby'                => 'title',
-		'tax_query' => array(
-			'relation' => 'OR',
-			array(
-				'taxonomy' => 'car_manufacturer',
-				'field'    => 'slug',
-				'terms'    => 'honda',
-			),
-			array(
-				'taxonomy' => 'car_class',
-				'field'    => 'slug',
-				'terms'    => 'sports',
-			),
-		),
-	);
-	$services = new WP_Query( $args );
-	$q = '';
-
-	if ( $services->have_posts() ) {
-		while ( $services->have_posts() ) {
-			$services->the_post();
-			$q .= '<li>' . get_the_title() . '</li>';
-		}
-	} else {
-		$q = 'Empty Data';
-	}
-
-	wp_reset_postdata();
-	// return $q;
-	echo $q;
-}
-
-add_shortcode( 'list_cars', 'showthis_template' );
-// add_action( 'showthis', 'showthis_template' );
-
-/**
- * Modify headers
- *
- * @param [type] $headers
- * @return void
- */
-function add_header_xua( $headers ) {
-
-	if ( ! is_admin() ) {
-		$headers['X-UA-Compatible'] = 'IE=edge,chrome=1';
-	}
-	return $headers;
-}
-add_filter( 'wp_headers', 'add_header_xua' ); 
-
-// Enqueue styles
 
 
